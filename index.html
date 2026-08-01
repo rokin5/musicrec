@@ -570,6 +570,9 @@
                 setupUploadListener();
                 loadPlaylistFromDB();
             });
+            
+            // Регистрируем Service Worker после загрузки страницы
+            registerServiceWorker();
         });
 
         // Проверка офлайн-статуса
@@ -587,6 +590,28 @@
             updateBadge();
             window.addEventListener('online', updateBadge);
             window.addEventListener('offline', updateBadge);
+        }
+
+        // Регистрация Service Worker
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                // Проверяем, зарегистрирован ли уже Service Worker
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    if (registrations.length === 0) {
+                        // Если не зарегистрирован, регистрируем
+                        const swUrl = 'sw.js';
+                        navigator.serviceWorker.register(swUrl)
+                            .then(function(registration) {
+                                console.log('Service Worker зарегистрирован успешно');
+                            })
+                            .catch(function(err) {
+                                console.log('Ошибка регистрации Service Worker:', err);
+                            });
+                    } else {
+                        console.log('Service Worker уже зарегистрирован');
+                    }
+                });
+            }
         }
 
         // Инициализация IndexedDB
@@ -622,7 +647,7 @@
                 const trackData = {
                     ...track,
                     blob: fileBlob,
-                    file: null // Не сохраняем URL
+                    file: null
                 };
                 
                 const request = store.put(trackData);
@@ -649,23 +674,19 @@
                     
                     for (const track of tracks) {
                         if (track.blob) {
-                            // Создаем URL из blob
                             const url = URL.createObjectURL(track.blob);
                             playlist.push({
                                 ...track,
                                 file: url,
-                                blob: undefined // Убираем blob из памяти
+                                blob: undefined
                             });
                         }
                     }
                     
                     if (playlist.length > 0) {
-                        // Перемешиваем
                         shufflePlaylist();
                         updatePlaylistUI();
                         updateStats();
-                        
-                        // Загружаем первый трек
                         playTrack(0);
                     } else {
                         playlistContainer.innerHTML = '<li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>';
@@ -717,12 +738,10 @@
                 try {
                     totalSize += file.size;
                     
-                    // Получаем метаданные
                     const metadata = await getAudioMetadata(file);
                     
                     const trackId = 'track_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     
-                    // Создаем URL для временного воспроизведения
                     const url = URL.createObjectURL(file);
                     
                     const track = {
@@ -736,14 +755,12 @@
                         added: new Date().toLocaleString()
                     };
                     
-                    // Пробуем разобрать имя файла если нет метаданных
                     if (track.name.includes(' - ') && track.artist === 'Загружено с телефона') {
                         const parts = track.name.split(' - ');
                         track.artist = parts[0].trim();
                         track.name = parts[1].trim();
                     }
                     
-                    // Сохраняем в IndexedDB
                     await saveTrackToDB(track, file);
                     
                     playlist.push(track);
@@ -760,21 +777,17 @@
                 storageInfo.textContent = `Обработано: ${processed}/${audioFiles.length} • ${formatBytes(totalSize)}`;
             }
 
-            // Перемешиваем плейлист
             shufflePlaylist();
             
-            // Обновляем интерфейс
             updatePlaylistUI();
             updateStats();
             
             uploadProgress.style.display = 'none';
             
-            // Если это первый трек, начинаем играть
             if (playlist.length > 0) {
                 playTrack(0);
             }
             
-            // Очищаем input
             uploadInput.value = '';
         }
 
@@ -837,7 +850,6 @@
                     li.classList.add('active');
                 }
                 
-                // Название трека
                 const trackNameSpan = document.createElement('span');
                 trackNameSpan.textContent = `${track.artist} - ${track.name}`;
                 trackNameSpan.style.flex = '1';
@@ -845,7 +857,6 @@
                 trackNameSpan.style.textOverflow = 'ellipsis';
                 trackNameSpan.style.whiteSpace = 'nowrap';
                 
-                // Кнопка удаления
                 const deleteBtn = document.createElement('span');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.innerHTML = '🗑️';
@@ -870,12 +881,10 @@
             if (index >= 0 && index < playlist.length) {
                 const track = playlist[index];
                 
-                // Освобождаем URL
                 if (track.file && track.file.startsWith('blob:')) {
                     URL.revokeObjectURL(track.file);
                 }
                 
-                // Удаляем из IndexedDB
                 await deleteTrackFromDB(track.id);
                 
                 playlist.splice(index, 1);
@@ -916,7 +925,6 @@
             trackName.textContent = track.name;
             trackArtist.textContent = track.artist;
             
-            // Меняем эмодзи
             const emojis = ['🎵', '🎶', '🎸', '🎹', '🎷', '🎺', '🎻', '🥁', '🎤'];
             coverEmoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
             
@@ -969,14 +977,12 @@
         // Очистить плейлист
         async function clearPlaylist() {
             if (playlist.length > 0 && confirm('Удалить все треки из плейлиста?')) {
-                // Освобождаем все URL
                 playlist.forEach(track => {
                     if (track.file && track.file.startsWith('blob:')) {
                         URL.revokeObjectURL(track.file);
                     }
                 });
                 
-                // Очищаем IndexedDB
                 const transaction = window.db.transaction([STORE_NAME], 'readwrite');
                 const store = transaction.objectStore(STORE_NAME);
                 store.clear();
@@ -999,7 +1005,6 @@
             if (playlist.length > 0 && playlist[currentTrackIndex]) {
                 const track = playlist[currentTrackIndex];
                 
-                // Получаем blob из IndexedDB
                 const transaction = window.db.transaction([STORE_NAME], 'readonly');
                 const store = transaction.objectStore(STORE_NAME);
                 const request = store.get(track.id);
@@ -1089,61 +1094,71 @@
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
+    </script>
+    
+    <script>
+        // Этот скрипт создает Service Worker отдельным файлом
+        (function() {
+            if ('serviceWorker' in navigator) {
+                // Создаем Service Worker как отдельный файл
+                const swCode = `
+                    const CACHE_NAME = 'music-box-v3';
+                    const urlsToCache = [
+                        '/',
+                        '/index.html'
+                    ];
 
-        // Регистрация Service Worker для офлайн-режима
-        if ('serviceWorker' in navigator) {
-            // Создаем отдельный скрипт для Service Worker
-            const swScript = `
-                const CACHE_NAME = 'music-box-v2';
-                const urlsToCache = [
-                    '/',
-                    '/index.html'
-                ];
-
-                self.addEventListener('install', event => {
-                    event.waitUntil(
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                return cache.addAll(urlsToCache);
-                            })
-                    );
-                });
-
-                self.addEventListener('fetch', event => {
-                    event.respondWith(
-                        caches.match(event.request)
-                            .then(response => {
-                                if (response) {
-                                    return response;
-                                }
-                                return fetch(event.request);
-                            })
-                    );
-                });
-
-                self.addEventListener('activate', event => {
-                    event.waitUntil(
-                        caches.keys().then(cacheNames => {
-                            return Promise.all(
-                                cacheNames.map(cacheName => {
-                                    if (cacheName !== CACHE_NAME) {
-                                        return caches.delete(cacheName);
-                                    }
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(cache => {
+                                    console.log('Cache opened');
+                                    return cache.addAll(urlsToCache);
                                 })
-                            );
-                        })
-                    );
-                });
-            `;
+                        );
+                    });
 
-            // Создаем Blob и регистрируем
-            const blob = new Blob([swScript], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            
-            navigator.serviceWorker.register(swUrl)
-                .then(() => console.log('Service Worker зарегистрирован'))
-                .catch(() => console.log('Service Worker не поддерживается'));
-        }
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(response => {
+                                    if (response) {
+                                        return response;
+                                    }
+                                    return fetch(event.request);
+                                })
+                        );
+                    });
+
+                    self.addEventListener('activate', event => {
+                        event.waitUntil(
+                            caches.keys().then(cacheNames => {
+                                return Promise.all(
+                                    cacheNames.map(cacheName => {
+                                        if (cacheName !== CACHE_NAME) {
+                                            return caches.delete(cacheName);
+                                        }
+                                    })
+                                );
+                            })
+                        );
+                    });
+                `;
+
+                // Создаем Blob и регистрируем как Service Worker
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                // Регистрируем Service Worker
+                navigator.serviceWorker.register(swUrl)
+                    .then(() => {
+                        console.log('Service Worker успешно зарегистрирован');
+                    })
+                    .catch((err) => {
+                        console.log('Ошибка регистрации Service Worker:', err);
+                    });
+            }
+        })();
     </script>
 </body>
 </html>
