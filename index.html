@@ -564,7 +564,6 @@
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            registerServiceWorker();
             checkOfflineStatus();
             initDatabase().then(() => {
                 setupAudioListeners();
@@ -1092,58 +1091,58 @@
         }
 
         // Регистрация Service Worker для офлайн-режима
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                const swCode = `
-                    const CACHE_NAME = 'music-box-v2';
-                    const urlsToCache = [
-                        '/',
-                        '/index.html'
-                    ];
+        if ('serviceWorker' in navigator) {
+            // Создаем отдельный скрипт для Service Worker
+            const swScript = `
+                const CACHE_NAME = 'music-box-v2';
+                const urlsToCache = [
+                    '/',
+                    '/index.html'
+                ];
 
-                    self.addEventListener('install', event => {
-                        event.waitUntil(
-                            caches.open(CACHE_NAME)
-                                .then(cache => {
-                                    return cache.addAll(urlsToCache);
-                                })
-                        );
-                    });
-
-                    self.addEventListener('fetch', event => {
-                        event.respondWith(
-                            caches.match(event.request)
-                                .then(response => {
-                                    if (response) {
-                                        return response;
-                                    }
-                                    return fetch(event.request);
-                                })
-                        );
-                    });
-
-                    self.addEventListener('activate', event => {
-                        event.waitUntil(
-                            caches.keys().then(cacheNames => {
-                                return Promise.all(
-                                    cacheNames.map(cacheName => {
-                                        if (cacheName !== CACHE_NAME) {
-                                            return caches.delete(cacheName);
-                                        }
-                                    })
-                                );
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                return cache.addAll(urlsToCache);
                             })
-                        );
-                    });
-                `;
-                
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const url = URL.createObjectURL(blob);
-                
-                navigator.serviceWorker.register(url)
-                    .then(() => console.log('Service Worker зарегистрирован для офлайн-режима'))
-                    .catch(() => console.log('Service Worker не поддерживается'));
-            }
+                    );
+                });
+
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then(response => {
+                                if (response) {
+                                    return response;
+                                }
+                                return fetch(event.request);
+                            })
+                    );
+                });
+
+                self.addEventListener('activate', event => {
+                    event.waitUntil(
+                        caches.keys().then(cacheNames => {
+                            return Promise.all(
+                                cacheNames.map(cacheName => {
+                                    if (cacheName !== CACHE_NAME) {
+                                        return caches.delete(cacheName);
+                                    }
+                                })
+                            );
+                        })
+                    );
+                });
+            `;
+
+            // Создаем Blob и регистрируем
+            const blob = new Blob([swScript], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl)
+                .then(() => console.log('Service Worker зарегистрирован'))
+                .catch(() => console.log('Service Worker не поддерживается'));
         }
     </script>
 </body>
