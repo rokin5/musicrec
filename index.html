@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎵 Music Box - Моя музыка</title>
+    <title>🎧 Music Box</title>
     <meta name="theme-color" content="#1db954">
     <style>
         * {
@@ -97,6 +97,12 @@
 
         .hidden-input {
             display: none;
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 8px;
         }
 
         .upload-progress {
@@ -376,7 +382,7 @@
         <div class="player">
             <div class="player__header">
                 <h1 class="player__title">🎧 Music Box</h1>
-                <p class="player__subtitle">Моя музыка</p>
+                <p class="player__subtitle">Загружай и слушай в фоне</p>
             </div>
             
             <!-- Загрузка музыки -->
@@ -386,7 +392,7 @@
                     <span>Выбрать музыку с телефона</span>
                 </label>
                 <input type="file" id="musicUpload" accept="audio/*" multiple class="hidden-input">
-                <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">MP3, M4A, OGG, WAV</p>
+                <p class="upload-hint">MP3, M4A, OGG, WAV (до 1000+ треков)</p>
             </div>
             
             <!-- Прогресс загрузки -->
@@ -402,8 +408,8 @@
             </div>
             
             <div class="player__info">
-                <h2 class="player__track-name" id="trackName">Нет треков</h2>
-                <p class="player__track-artist" id="trackArtist">Загрузи музыку</p>
+                <h2 class="player__track-name" id="trackName">Нет загруженных треков</h2>
+                <p class="player__track-artist" id="trackArtist">Нажми кнопку выше</p>
             </div>
             
             <audio id="audioPlayer" preload="metadata"></audio>
@@ -442,15 +448,15 @@
             <!-- Плейлист -->
             <div class="player__playlist">
                 <div class="playlist-title">
-                    <span>📋 Мои треки</span>
+                    <span>📋 Твои треки</span>
                     <span class="playlist-count" id="trackCount">0</span>
                 </div>
                 <ul class="playlist" id="playlistContainer">
-                    <li class="playlist-item playlist-empty">Загрузи музыку</li>
+                    <li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>
                 </ul>
             </div>
             
-            <div class="stats" id="stats">🎵 Нет треков</div>
+            <div class="stats" id="stats">🎵 Загрузка...</div>
         </div>
     </div>
 
@@ -489,19 +495,31 @@
                 if (saved) {
                     const tracks = JSON.parse(saved);
                     if (tracks.length > 0) {
-                        // Восстанавливаем треки из сохраненных данных
+                        // Восстанавливаем треки
                         playlist = tracks.map(track => {
-                            // Если файл сохранен как blob URL, создаем новый URL
+                            // Если есть сохраненные данные файла
                             if (track.fileData) {
-                                const blob = new Blob([track.fileData], { type: track.type || 'audio/mpeg' });
-                                const url = URL.createObjectURL(blob);
-                                return {
-                                    ...track,
-                                    file: url
-                                };
+                                try {
+                                    // Преобразуем base64 обратно в blob
+                                    const byteCharacters = atob(track.fileData);
+                                    const byteNumbers = new Array(byteCharacters.length);
+                                    for (let i = 0; i < byteCharacters.length; i++) {
+                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                    }
+                                    const byteArray = new Uint8Array(byteNumbers);
+                                    const blob = new Blob([byteArray], { type: track.type || 'audio/mpeg' });
+                                    const url = URL.createObjectURL(blob);
+                                    return {
+                                        ...track,
+                                        file: url
+                                    };
+                                } catch (e) {
+                                    console.error('Ошибка восстановления трека:', e);
+                                    return null;
+                                }
                             }
                             return track;
-                        });
+                        }).filter(track => track !== null);
                         
                         updatePlaylistUI();
                         updateStats();
@@ -520,14 +538,16 @@
         function savePlaylist() {
             try {
                 const tracksToSave = playlist.map(async (track) => {
-                    // Если это blob URL, конвертируем в данные
+                    // Если это blob URL, конвертируем в base64
                     if (track.file && track.file.startsWith('blob:')) {
                         try {
                             const response = await fetch(track.file);
                             const blob = await response.blob();
-                            const reader = new FileReader();
                             return new Promise((resolve) => {
+                                const reader = new FileReader();
                                 reader.onload = function() {
+                                    // Получаем base64 данные без префикса
+                                    const base64Data = reader.result.split(',')[1];
                                     resolve({
                                         id: track.id,
                                         name: track.name,
@@ -535,10 +555,10 @@
                                         size: track.size,
                                         type: track.type,
                                         added: track.added,
-                                        fileData: reader.result
+                                        fileData: base64Data
                                     });
                                 };
-                                reader.readAsArrayBuffer(blob);
+                                reader.readAsDataURL(blob);
                             });
                         } catch (e) {
                             console.error('Ошибка сохранения трека:', e);
@@ -589,18 +609,20 @@
                     progressFill.textContent = percent + '%';
                 });
                 
-                // Сохраняем плейлист
-                savePlaylist();
-                updatePlaylistUI();
-                updateStats();
-                
-                if (playlist.length > 0) {
-                    playTrack(playlist.length - files.length);
-                }
-                
+                // Сохраняем плейлист после загрузки всех файлов
                 setTimeout(() => {
-                    uploadProgress.style.display = 'none';
-                }, 1000);
+                    savePlaylist();
+                    updatePlaylistUI();
+                    updateStats();
+                    
+                    if (playlist.length > 0) {
+                        playTrack(playlist.length - files.length);
+                    }
+                    
+                    setTimeout(() => {
+                        uploadProgress.style.display = 'none';
+                    }, 500);
+                }, 100);
                 
                 uploadInput.value = '';
             });
@@ -679,8 +701,8 @@
                 playlist = [];
                 currentTrackIndex = 0;
                 audio.src = '';
-                trackName.textContent = 'Нет треков';
-                trackArtist.textContent = 'Загрузи музыку';
+                trackName.textContent = 'Нет загруженных треков';
+                trackArtist.textContent = 'Нажми кнопку выше';
                 coverEmoji.textContent = '🎵';
                 localStorage.removeItem('musicPlaylist');
                 updatePlaylistUI();
@@ -691,7 +713,7 @@
         // Обновление плейлиста
         function updatePlaylistUI() {
             if (playlist.length === 0) {
-                playlistContainer.innerHTML = '<li class="playlist-item playlist-empty">Нет треков</li>';
+                playlistContainer.innerHTML = '<li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>';
                 trackCount.textContent = '0';
                 return;
             }
@@ -730,8 +752,8 @@
                     playTrack(Math.min(index, playlist.length - 1));
                 } else {
                     audio.src = '';
-                    trackName.textContent = 'Нет треков';
-                    trackArtist.textContent = 'Загрузи музыку';
+                    trackName.textContent = 'Нет загруженных треков';
+                    trackArtist.textContent = 'Нажми кнопку выше';
                 }
             } else if (index < currentTrackIndex) {
                 currentTrackIndex--;
@@ -747,7 +769,7 @@
                 const totalSize = playlist.reduce((acc, track) => acc + (track.size || 0), 0);
                 stats.innerHTML = `🎵 ${playlist.length} треков • 💾 ${formatBytes(totalSize)}`;
             } else {
-                stats.innerHTML = '🎵 Нет треков';
+                stats.innerHTML = '🎵 Загрузка...';
             }
         }
 
@@ -813,6 +835,7 @@
                         event.waitUntil(
                             caches.open(CACHE_NAME)
                                 .then(cache => {
+                                    console.log('Cache opened');
                                     return cache.addAll(urlsToCache);
                                 })
                         );
