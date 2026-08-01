@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎧 Music Box</title>
+    <title>🎵 Music Box - Офлайн плеер</title>
     <meta name="theme-color" content="#1db954">
     <style>
         * {
@@ -65,6 +65,24 @@
             font-size: 14px;
         }
 
+        .offline-badge {
+            display: inline-block;
+            background: #ff6b35;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+            -webkit-text-fill-color: white;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
         .upload-section {
             text-align: center;
             margin-bottom: 20px;
@@ -85,6 +103,7 @@
             gap: 12px;
             font-weight: 600;
             transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
             width: 100%;
             justify-content: center;
             font-size: 16px;
@@ -95,14 +114,18 @@
             box-shadow: 0 6px 20px rgba(29, 185, 84, 0.5);
         }
 
-        .hidden-input {
-            display: none;
+        .upload-icon {
+            font-size: 24px;
         }
 
         .upload-hint {
             color: var(--text-secondary);
             font-size: 12px;
             margin-top: 8px;
+        }
+
+        .hidden-input {
+            display: none;
         }
 
         .upload-progress {
@@ -115,6 +138,7 @@
             background: var(--card-color);
             border-radius: 12px;
             overflow: hidden;
+            position: relative;
         }
 
         .progress-bar-fill {
@@ -125,6 +149,7 @@
             line-height: 24px;
             text-align: center;
             transition: width 0.3s;
+            border-radius: 12px;
             white-space: nowrap;
             overflow: hidden;
         }
@@ -144,6 +169,7 @@
         .player__cover-icon {
             font-size: 64px;
             filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s;
         }
 
         .player__info {
@@ -185,7 +211,12 @@
             background: var(--primary-color);
             border-radius: 50%;
             cursor: pointer;
+            transition: transform 0.1s;
             box-shadow: 0 2px 8px rgba(29, 185, 84, 0.6);
+        }
+
+        .progress-bar::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
 
         .player__time {
@@ -209,6 +240,7 @@
             color: var(--text-primary);
             font-size: 24px;
             cursor: pointer;
+            transition: all 0.2s;
             width: 48px;
             height: 48px;
             display: flex;
@@ -235,6 +267,7 @@
 
         .player__extra-controls {
             display: flex;
+            justify-content: space-around;
             gap: 8px;
             margin-bottom: 20px;
             padding: 10px;
@@ -253,6 +286,7 @@
             cursor: pointer;
             padding: 8px 12px;
             border-radius: 30px;
+            transition: all 0.2s;
             font-size: 12px;
             flex: 1;
         }
@@ -274,6 +308,7 @@
             font-size: 14px;
             color: var(--text-secondary);
             margin-bottom: 12px;
+            font-weight: 400;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -291,6 +326,8 @@
             list-style: none;
             max-height: 200px;
             overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--card-color);
             border-radius: 8px;
         }
 
@@ -316,9 +353,14 @@
             font-size: 14px;
             color: var(--text-secondary);
             cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         .playlist-item:hover {
@@ -328,6 +370,11 @@
 
         .playlist-item.active {
             background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .playlist-item.active .delete-btn {
             color: white;
         }
 
@@ -346,6 +393,8 @@
             padding: 0 8px;
             cursor: pointer;
             opacity: 0.7;
+            transition: opacity 0.2s;
+            z-index: 10;
         }
 
         .delete-btn:hover {
@@ -361,19 +410,40 @@
             border-top: 1px solid var(--card-color);
         }
 
-        @media (max-width: 480px) {
-            .container { padding: 4px; }
-            .player { padding: 16px; }
-            .player__cover { width: 150px; height: 150px; }
+        .loading {
+            animation: pulse 1.5s infinite;
         }
 
-        .error-message {
-            color: #ff4444;
-            text-align: center;
-            padding: 10px;
-            background: rgba(255, 68, 68, 0.1);
-            border-radius: 8px;
-            margin: 10px 0;
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .storage-info {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 4px;
+            }
+            
+            .player {
+                padding: 16px;
+            }
+            
+            .player__cover {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .extra-btn {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
@@ -383,16 +453,17 @@
             <div class="player__header">
                 <h1 class="player__title">🎧 Music Box</h1>
                 <p class="player__subtitle">Загружай и слушай в фоне</p>
+                <div id="offlineBadgeContainer"></div>
             </div>
             
-            <!-- Загрузка музыки -->
+            <!-- Кнопка загрузки музыки -->
             <div class="upload-section">
                 <label for="musicUpload" class="upload-btn">
                     <span class="upload-icon">📁</span>
                     <span>Выбрать музыку с телефона</span>
                 </label>
                 <input type="file" id="musicUpload" accept="audio/*" multiple class="hidden-input">
-                <p class="upload-hint">MP3, M4A, OGG, WAV (до 1000+ треков)</p>
+                <p class="upload-hint">Можно выбрать 100+ треков (MP3, M4A, OGG, WAV)</p>
             </div>
             
             <!-- Прогресс загрузки -->
@@ -400,16 +471,16 @@
                 <div class="progress-bar-container">
                     <div class="progress-bar-fill" id="progressFill">0%</div>
                 </div>
+                <div class="storage-info" id="storageInfo"></div>
             </div>
             
-            <!-- Плеер -->
-            <div class="player__cover">
+            <div class="player__cover" id="coverPlaceholder">
                 <div class="player__cover-icon" id="coverEmoji">🎵</div>
             </div>
             
             <div class="player__info">
-                <h2 class="player__track-name" id="trackName">Нет загруженных треков</h2>
-                <p class="player__track-artist" id="trackArtist">Нажми кнопку выше</p>
+                <h2 class="player__track-name" id="trackName">Загрузка плейлиста...</h2>
+                <p class="player__track-artist" id="trackArtist">Пожалуйста, подождите</p>
             </div>
             
             <audio id="audioPlayer" preload="metadata"></audio>
@@ -423,39 +494,43 @@
             </div>
             
             <div class="player__controls">
-                <button class="control-btn" onclick="playPrevious()">⏮</button>
-                <button class="control-btn play-pause" onclick="togglePlay()">
+                <button class="control-btn" onclick="playPrevious()" id="prevBtn">
+                    <span class="control-icon">⏮</span>
+                </button>
+                <button class="control-btn play-pause" onclick="togglePlay()" id="playPauseBtn">
                     <span class="control-icon" id="playIcon">▶</span>
                 </button>
-                <button class="control-btn" onclick="playNext()">⏭</button>
+                <button class="control-btn" onclick="playNext()" id="nextBtn">
+                    <span class="control-icon">⏭</span>
+                </button>
             </div>
             
             <div class="player__extra-controls">
-                <button class="extra-btn" onclick="playRandom()">
+                <button class="extra-btn" onclick="playRandom()" title="Случайный трек">
                     <span class="extra-icon">🎲</span>
                     <span>Рандом</span>
                 </button>
-                <button class="extra-btn" onclick="downloadCurrent()">
+                <button class="extra-btn" onclick="downloadCurrent()" title="Скачать текущий трек">
                     <span class="extra-icon">⬇️</span>
                     <span>Скачать</span>
                 </button>
-                <button class="extra-btn" onclick="clearPlaylist()">
+                <button class="extra-btn" onclick="clearPlaylist()" title="Очистить плейлист">
                     <span class="extra-icon">🗑️</span>
                     <span>Очистить</span>
                 </button>
             </div>
             
-            <!-- Плейлист -->
             <div class="player__playlist">
                 <div class="playlist-title">
                     <span>📋 Твои треки</span>
                     <span class="playlist-count" id="trackCount">0</span>
                 </div>
                 <ul class="playlist" id="playlistContainer">
-                    <li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>
+                    <li class="playlist-item playlist-empty">Загрузка сохраненной музыки...</li>
                 </ul>
             </div>
             
+            <!-- Статистика -->
             <div class="stats" id="stats">🎵 Загрузка...</div>
         </div>
     </div>
@@ -464,8 +539,10 @@
         // Глобальные переменные
         let playlist = [];
         let currentTrackIndex = 0;
+        let isPlaying = false;
         let audio = document.getElementById('audioPlayer');
         let progressBar = document.getElementById('progressBar');
+        let playPauseBtn = document.getElementById('playPauseBtn');
         let playIcon = document.getElementById('playIcon');
         let trackName = document.getElementById('trackName');
         let trackArtist = document.getElementById('trackArtist');
@@ -478,159 +555,360 @@
         let trackCount = document.getElementById('trackCount');
         let uploadProgress = document.getElementById('uploadProgress');
         let progressFill = document.getElementById('progressFill');
-        let errorMessage = document.getElementById('errorMessage');
+        let storageInfo = document.getElementById('storageInfo');
+
+        // Название базы данных
+        const DB_NAME = 'MusicBoxDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'tracks';
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            setupAudioListeners();
-            setupUploadListener();
             registerServiceWorker();
-            loadPlaylistFromStorage();
+            checkOfflineStatus();
+            initDatabase().then(() => {
+                setupAudioListeners();
+                setupUploadListener();
+                loadPlaylistFromDB();
+            });
         });
 
-        // Загрузка плейлиста из localStorage
-        function loadPlaylistFromStorage() {
-            try {
-                const saved = localStorage.getItem('musicPlaylist');
-                if (saved) {
-                    const tracks = JSON.parse(saved);
-                    if (tracks.length > 0) {
-                        // Восстанавливаем треки
-                        playlist = tracks.map(track => {
-                            // Если есть сохраненные данные файла
-                            if (track.fileData) {
-                                try {
-                                    // Преобразуем base64 обратно в blob
-                                    const byteCharacters = atob(track.fileData);
-                                    const byteNumbers = new Array(byteCharacters.length);
-                                    for (let i = 0; i < byteCharacters.length; i++) {
-                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                    }
-                                    const byteArray = new Uint8Array(byteNumbers);
-                                    const blob = new Blob([byteArray], { type: track.type || 'audio/mpeg' });
-                                    const url = URL.createObjectURL(blob);
-                                    return {
-                                        ...track,
-                                        file: url
-                                    };
-                                } catch (e) {
-                                    console.error('Ошибка восстановления трека:', e);
-                                    return null;
-                                }
-                            }
-                            return track;
-                        }).filter(track => track !== null);
-                        
+        // Проверка офлайн-статуса
+        function checkOfflineStatus() {
+            const badgeContainer = document.getElementById('offlineBadgeContainer');
+            
+            function updateBadge() {
+                if (!navigator.onLine) {
+                    badgeContainer.innerHTML = '<span class="offline-badge">📡 ОФЛАЙН</span>';
+                } else {
+                    badgeContainer.innerHTML = '';
+                }
+            }
+            
+            updateBadge();
+            window.addEventListener('online', updateBadge);
+            window.addEventListener('offline', updateBadge);
+        }
+
+        // Инициализация IndexedDB
+        function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => {
+                    console.error('Ошибка открытия БД');
+                    reject();
+                };
+                
+                request.onsuccess = (event) => {
+                    window.db = event.target.result;
+                    resolve();
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        // Сохранение трека в БД
+        function saveTrackToDB(track, fileBlob) {
+            return new Promise((resolve, reject) => {
+                const transaction = window.db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                const trackData = {
+                    ...track,
+                    blob: fileBlob,
+                    file: null // Не сохраняем URL
+                };
+                
+                const request = store.put(trackData);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject();
+            });
+        }
+
+        // Загрузка всех треков из БД
+        function loadPlaylistFromDB() {
+            return new Promise((resolve, reject) => {
+                if (!window.db) {
+                    resolve();
+                    return;
+                }
+                
+                const transaction = window.db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+                
+                request.onsuccess = async (event) => {
+                    const tracks = event.target.result;
+                    
+                    for (const track of tracks) {
+                        if (track.blob) {
+                            // Создаем URL из blob
+                            const url = URL.createObjectURL(track.blob);
+                            playlist.push({
+                                ...track,
+                                file: url,
+                                blob: undefined // Убираем blob из памяти
+                            });
+                        }
+                    }
+                    
+                    if (playlist.length > 0) {
+                        // Перемешиваем
+                        shufflePlaylist();
                         updatePlaylistUI();
                         updateStats();
                         
-                        if (playlist.length > 0) {
-                            playTrack(0);
-                        }
+                        // Загружаем первый трек
+                        playTrack(0);
+                    } else {
+                        playlistContainer.innerHTML = '<li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>';
+                        trackName.textContent = 'Нет загруженных треков';
+                        trackArtist.textContent = 'Нажми кнопку выше';
                     }
-                }
-            } catch (e) {
-                console.log('Нет сохраненных треков');
-            }
+                    
+                    resolve();
+                };
+                
+                request.onerror = () => resolve();
+            });
         }
 
-        // Сохранение плейлиста в localStorage
-        function savePlaylist() {
-            try {
-                const tracksToSave = playlist.map(async (track) => {
-                    // Если это blob URL, конвертируем в base64
-                    if (track.file && track.file.startsWith('blob:')) {
-                        try {
-                            const response = await fetch(track.file);
-                            const blob = await response.blob();
-                            return new Promise((resolve) => {
-                                const reader = new FileReader();
-                                reader.onload = function() {
-                                    // Получаем base64 данные без префикса
-                                    const base64Data = reader.result.split(',')[1];
-                                    resolve({
-                                        id: track.id,
-                                        name: track.name,
-                                        artist: track.artist,
-                                        size: track.size,
-                                        type: track.type,
-                                        added: track.added,
-                                        fileData: base64Data
-                                    });
-                                };
-                                reader.readAsDataURL(blob);
-                            });
-                        } catch (e) {
-                            console.error('Ошибка сохранения трека:', e);
-                            return null;
-                        }
-                    }
-                    return track;
-                });
-
-                Promise.all(tracksToSave).then((savedTracks) => {
-                    const validTracks = savedTracks.filter(t => t !== null);
-                    localStorage.setItem('musicPlaylist', JSON.stringify(validTracks));
-                });
-            } catch (e) {
-                console.error('Ошибка сохранения:', e);
-            }
+        // Удаление трека из БД
+        function deleteTrackFromDB(trackId) {
+            return new Promise((resolve, reject) => {
+                const transaction = window.db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(trackId);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject();
+            });
         }
 
-        // Обработка загруженных файлов
+        // Настройка загрузки файлов
         function setupUploadListener() {
             uploadInput.addEventListener('change', function(event) {
                 const files = Array.from(event.target.files);
-                
-                if (files.length === 0) return;
-                
-                uploadProgress.style.display = 'block';
-                let processed = 0;
-                
-                files.forEach(file => {
-                    if (file.type.startsWith('audio/')) {
-                        const url = URL.createObjectURL(file);
-                        const trackId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                        
-                        playlist.push({
-                            id: trackId,
-                            name: file.name.replace(/\.[^/.]+$/, ""),
-                            artist: 'Моя музыка',
-                            file: url,
-                            size: file.size,
-                            type: file.type,
-                            added: new Date().toLocaleString()
-                        });
+                processAudioFiles(files);
+            });
+        }
+
+        // Обработка аудио файлов
+        async function processAudioFiles(files) {
+            const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+            
+            if (audioFiles.length === 0) {
+                alert('Выбери аудио файлы (MP3, M4A, OGG и т.д.)');
+                return;
+            }
+
+            uploadProgress.style.display = 'block';
+            let processed = 0;
+            let totalSize = 0;
+
+            for (const file of audioFiles) {
+                try {
+                    totalSize += file.size;
+                    
+                    // Получаем метаданные
+                    const metadata = await getAudioMetadata(file);
+                    
+                    const trackId = 'track_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Создаем URL для временного воспроизведения
+                    const url = URL.createObjectURL(file);
+                    
+                    const track = {
+                        id: trackId,
+                        name: metadata.title || getFileNameWithoutExt(file.name),
+                        artist: metadata.artist || 'Загружено с телефона',
+                        file: url,
+                        size: file.size,
+                        type: file.type,
+                        duration: metadata.duration || 0,
+                        added: new Date().toLocaleString()
+                    };
+                    
+                    // Пробуем разобрать имя файла если нет метаданных
+                    if (track.name.includes(' - ') && track.artist === 'Загружено с телефона') {
+                        const parts = track.name.split(' - ');
+                        track.artist = parts[0].trim();
+                        track.name = parts[1].trim();
                     }
                     
-                    processed++;
-                    const percent = Math.round((processed / files.length) * 100);
-                    progressFill.style.width = percent + '%';
-                    progressFill.textContent = percent + '%';
+                    // Сохраняем в IndexedDB
+                    await saveTrackToDB(track, file);
+                    
+                    playlist.push(track);
+                    
+                } catch (error) {
+                    console.error('Ошибка обработки файла:', error);
+                }
+                
+                processed++;
+                const percent = Math.round((processed / audioFiles.length) * 100);
+                progressFill.style.width = percent + '%';
+                progressFill.textContent = percent + '%';
+                
+                storageInfo.textContent = `Обработано: ${processed}/${audioFiles.length} • ${formatBytes(totalSize)}`;
+            }
+
+            // Перемешиваем плейлист
+            shufflePlaylist();
+            
+            // Обновляем интерфейс
+            updatePlaylistUI();
+            updateStats();
+            
+            uploadProgress.style.display = 'none';
+            
+            // Если это первый трек, начинаем играть
+            if (playlist.length > 0) {
+                playTrack(0);
+            }
+            
+            // Очищаем input
+            uploadInput.value = '';
+        }
+
+        // Получение метаданных аудио
+        function getAudioMetadata(file) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                const tempAudio = new Audio();
+                
+                tempAudio.addEventListener('loadedmetadata', () => {
+                    URL.revokeObjectURL(url);
+                    
+                    resolve({
+                        title: getFileNameWithoutExt(file.name),
+                        artist: 'Загружено с телефона',
+                        duration: tempAudio.duration
+                    });
                 });
                 
-                // Сохраняем плейлист после загрузки всех файлов
-                setTimeout(() => {
-                    savePlaylist();
-                    updatePlaylistUI();
-                    updateStats();
-                    
-                    if (playlist.length > 0) {
-                        playTrack(playlist.length - files.length);
-                    }
-                    
-                    setTimeout(() => {
-                        uploadProgress.style.display = 'none';
-                    }, 500);
-                }, 100);
+                tempAudio.addEventListener('error', () => {
+                    URL.revokeObjectURL(url);
+                    resolve({
+                        title: getFileNameWithoutExt(file.name),
+                        artist: 'Загружено с телефона',
+                        duration: 0
+                    });
+                });
                 
-                uploadInput.value = '';
+                tempAudio.src = url;
+                tempAudio.load();
             });
+        }
+
+        // Получить имя файла без расширения
+        function getFileNameWithoutExt(filename) {
+            return filename.split('.').slice(0, -1).join('.') || filename;
+        }
+
+        // Перемешать плейлист
+        function shufflePlaylist() {
+            for (let i = playlist.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
+            }
+        }
+
+        // Обновление списка плейлиста
+        function updatePlaylistUI() {
+            if (playlist.length === 0) {
+                playlistContainer.innerHTML = '<li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>';
+                trackCount.textContent = '0';
+                return;
+            }
+            
+            playlistContainer.innerHTML = '';
+            playlist.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.className = 'playlist-item';
+                if (index === currentTrackIndex) {
+                    li.classList.add('active');
+                }
+                
+                // Название трека
+                const trackNameSpan = document.createElement('span');
+                trackNameSpan.textContent = `${track.artist} - ${track.name}`;
+                trackNameSpan.style.flex = '1';
+                trackNameSpan.style.overflow = 'hidden';
+                trackNameSpan.style.textOverflow = 'ellipsis';
+                trackNameSpan.style.whiteSpace = 'nowrap';
+                
+                // Кнопка удаления
+                const deleteBtn = document.createElement('span');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '🗑️';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeTrack(index);
+                };
+                
+                li.appendChild(trackNameSpan);
+                li.appendChild(deleteBtn);
+                
+                li.onclick = () => playTrack(index);
+                
+                playlistContainer.appendChild(li);
+            });
+            
+            trackCount.textContent = playlist.length;
+        }
+
+        // Удалить трек
+        async function removeTrack(index) {
+            if (index >= 0 && index < playlist.length) {
+                const track = playlist[index];
+                
+                // Освобождаем URL
+                if (track.file && track.file.startsWith('blob:')) {
+                    URL.revokeObjectURL(track.file);
+                }
+                
+                // Удаляем из IndexedDB
+                await deleteTrackFromDB(track.id);
+                
+                playlist.splice(index, 1);
+                
+                if (playlist.length === 0) {
+                    currentTrackIndex = 0;
+                    audio.src = '';
+                    audio.pause();
+                    trackName.textContent = 'Нет загруженных треков';
+                    trackArtist.textContent = 'Нажми кнопку выше';
+                    coverEmoji.textContent = '🎵';
+                } else {
+                    if (currentTrackIndex >= playlist.length) {
+                        currentTrackIndex = playlist.length - 1;
+                    }
+                    if (currentTrackIndex === index) {
+                        playTrack(currentTrackIndex);
+                    } else if (index < currentTrackIndex) {
+                        currentTrackIndex--;
+                    }
+                }
+                
+                updatePlaylistUI();
+                updateStats();
+            }
         }
 
         // Воспроизведение трека
         function playTrack(index) {
-            if (playlist.length === 0 || index < 0 || index >= playlist.length) return;
+            if (playlist.length === 0 || index < 0 || index >= playlist.length) {
+                return;
+            }
             
             currentTrackIndex = index;
             const track = playlist[index];
@@ -639,27 +917,32 @@
             trackName.textContent = track.name;
             trackArtist.textContent = track.artist;
             
+            // Меняем эмодзи
             const emojis = ['🎵', '🎶', '🎸', '🎹', '🎷', '🎺', '🎻', '🥁', '🎤'];
             coverEmoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
             
             updatePlaylistUI();
             
-            audio.play().catch(e => console.log('Автовоспроизведение не удалось:', e));
+            audio.play().catch(e => {
+                console.log('Нажми play чтобы начать');
+            });
         }
 
         // Переключение воспроизведения
         function togglePlay() {
             if (playlist.length === 0) {
-                errorMessage.textContent = 'Сначала загрузи музыку!';
-                errorMessage.style.display = 'block';
-                setTimeout(() => errorMessage.style.display = 'none', 3000);
+                alert('Сначала загрузи музыку!');
                 return;
             }
             
-            if (audio.paused) {
-                audio.play();
+            if (audio.src) {
+                if (audio.paused) {
+                    audio.play();
+                } else {
+                    audio.pause();
+                }
             } else {
-                audio.pause();
+                playTrack(0);
             }
         }
 
@@ -684,96 +967,71 @@
             playTrack(randomIndex);
         }
 
-        // Скачивание трека
-        function downloadCurrent() {
-            if (playlist.length > 0 && playlist[currentTrackIndex]) {
-                const track = playlist[currentTrackIndex];
-                const link = document.createElement('a');
-                link.href = track.file;
-                link.download = `${track.artist} - ${track.name}.mp3`;
-                link.click();
-            }
-        }
-
-        // Очистка плейлиста
-        function clearPlaylist() {
-            if (playlist.length > 0 && confirm('Удалить все треки?')) {
+        // Очистить плейлист
+        async function clearPlaylist() {
+            if (playlist.length > 0 && confirm('Удалить все треки из плейлиста?')) {
+                // Освобождаем все URL
+                playlist.forEach(track => {
+                    if (track.file && track.file.startsWith('blob:')) {
+                        URL.revokeObjectURL(track.file);
+                    }
+                });
+                
+                // Очищаем IndexedDB
+                const transaction = window.db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                store.clear();
+                
                 playlist = [];
                 currentTrackIndex = 0;
                 audio.src = '';
+                audio.pause();
                 trackName.textContent = 'Нет загруженных треков';
                 trackArtist.textContent = 'Нажми кнопку выше';
                 coverEmoji.textContent = '🎵';
-                localStorage.removeItem('musicPlaylist');
+                
                 updatePlaylistUI();
                 updateStats();
             }
         }
 
-        // Обновление плейлиста
-        function updatePlaylistUI() {
-            if (playlist.length === 0) {
-                playlistContainer.innerHTML = '<li class="playlist-item playlist-empty">Загрузи музыку с телефона</li>';
-                trackCount.textContent = '0';
-                return;
-            }
-            
-            playlistContainer.innerHTML = '';
-            playlist.forEach((track, index) => {
-                const li = document.createElement('li');
-                li.className = `playlist-item ${index === currentTrackIndex ? 'active' : ''}`;
+        // Скачивание текущего трека
+        function downloadCurrent() {
+            if (playlist.length > 0 && playlist[currentTrackIndex]) {
+                const track = playlist[currentTrackIndex];
                 
-                const textSpan = document.createElement('span');
-                textSpan.textContent = `${track.artist} - ${track.name}`;
+                // Получаем blob из IndexedDB
+                const transaction = window.db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(track.id);
                 
-                const deleteBtn = document.createElement('span');
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.innerHTML = '🗑️';
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    removeTrack(index);
+                request.onsuccess = (event) => {
+                    const trackData = event.target.result;
+                    if (trackData && trackData.blob) {
+                        const url = URL.createObjectURL(trackData.blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${track.artist} - ${track.name}.mp3`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                    }
                 };
-                
-                li.appendChild(textSpan);
-                li.appendChild(deleteBtn);
-                li.onclick = () => playTrack(index);
-                
-                playlistContainer.appendChild(li);
-            });
-            
-            trackCount.textContent = playlist.length;
-        }
-
-        // Удаление трека
-        function removeTrack(index) {
-            playlist.splice(index, 1);
-            if (index === currentTrackIndex) {
-                if (playlist.length > 0) {
-                    playTrack(Math.min(index, playlist.length - 1));
-                } else {
-                    audio.src = '';
-                    trackName.textContent = 'Нет загруженных треков';
-                    trackArtist.textContent = 'Нажми кнопку выше';
-                }
-            } else if (index < currentTrackIndex) {
-                currentTrackIndex--;
             }
-            savePlaylist();
-            updatePlaylistUI();
-            updateStats();
         }
 
         // Обновление статистики
         function updateStats() {
             if (playlist.length > 0) {
-                const totalSize = playlist.reduce((acc, track) => acc + (track.size || 0), 0);
+                const totalSize = playlist.reduce((acc, track) => acc + track.size, 0);
                 stats.innerHTML = `🎵 ${playlist.length} треков • 💾 ${formatBytes(totalSize)}`;
             } else {
-                stats.innerHTML = '🎵 Загрузка...';
+                stats.innerHTML = '🎵 Нет загруженных треков';
             }
         }
 
-        // Форматирование размера
+        // Форматирование байтов
         function formatBytes(bytes) {
             if (bytes === 0) return '0 Б';
             const k = 1024;
@@ -782,25 +1040,37 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Настройка аудио
+        // Настройка аудио слушателей
         function setupAudioListeners() {
             audio.addEventListener('timeupdate', updateProgress);
             audio.addEventListener('loadedmetadata', updateDuration);
             audio.addEventListener('ended', playNext);
-            audio.addEventListener('play', () => playIcon.textContent = '⏸');
-            audio.addEventListener('pause', () => playIcon.textContent = '▶');
+            audio.addEventListener('play', () => {
+                isPlaying = true;
+                playIcon.textContent = '⏸';
+            });
+            audio.addEventListener('pause', () => {
+                isPlaying = false;
+                playIcon.textContent = '▶';
+            });
+            audio.addEventListener('error', (e) => {
+                console.error('Ошибка воспроизведения:', e);
+                playNext();
+            });
             
             progressBar.addEventListener('input', function() {
                 if (audio.duration) {
-                    audio.currentTime = (this.value / 100) * audio.duration;
+                    const time = (this.value / 100) * audio.duration;
+                    audio.currentTime = time;
                 }
             });
         }
 
         // Обновление прогресса
         function updateProgress() {
-            if (audio.duration) {
-                progressBar.value = (audio.currentTime / audio.duration) * 100;
+            if (audio.duration && !isNaN(audio.duration)) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.value = percent;
                 currentTimeSpan.textContent = formatTime(audio.currentTime);
                 durationSpan.textContent = formatTime(audio.duration);
             }
@@ -808,24 +1078,24 @@
 
         // Обновление длительности
         function updateDuration() {
-            if (audio.duration) {
+            if (audio.duration && isFinite(audio.duration)) {
                 durationSpan.textContent = formatTime(audio.duration);
             }
         }
 
         // Форматирование времени
         function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
+            if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
-        // Service Worker для офлайн-режима
+        // Регистрация Service Worker для офлайн-режима
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'music-box-v1';
+                    const CACHE_NAME = 'music-box-v2';
                     const urlsToCache = [
                         '/',
                         '/index.html'
@@ -835,7 +1105,6 @@
                         event.waitUntil(
                             caches.open(CACHE_NAME)
                                 .then(cache => {
-                                    console.log('Cache opened');
                                     return cache.addAll(urlsToCache);
                                 })
                         );
@@ -869,9 +1138,9 @@
                 `;
                 
                 const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
+                const url = URL.createObjectURL(blob);
                 
-                navigator.serviceWorker.register(swUrl)
+                navigator.serviceWorker.register(url)
                     .then(() => console.log('Service Worker зарегистрирован для офлайн-режима'))
                     .catch(() => console.log('Service Worker не поддерживается'));
             }
